@@ -33,7 +33,7 @@ module Bai2
       @raw = raw
       @groups = []
       @options = DEFAULT_OPTIONS.merge(options)
-      parse(raw, options)
+      parse(raw, @options)
     end
 
     # This is the raw data. Probably not super important.
