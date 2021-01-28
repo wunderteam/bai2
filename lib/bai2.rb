@@ -14,6 +14,15 @@ module Bai2
       account_control_ignores_summary_amounts: false,
       num_account_summary_continuation_records: 0,
       continuations_slash_delimit_end_of_line_only: false,
+      # verification
+      verify_account_sums: true,
+      verify_file_sums: true,
+      verify_group_sums: true,
+      verify_num_accounts_in_group: true,
+      verify_num_groups_in_file: true,
+      verify_num_records_in_account: true,
+      verify_num_records_in_file: true,
+      verify_num_records_in_group: true,
     }.freeze
 
     # Parse a file on disk:
@@ -70,7 +79,7 @@ module Bai2
       parse_file_node(root)
 
       # assert integrity
-      assert_integrity!
+      assert_integrity!(options)
     end
 
 

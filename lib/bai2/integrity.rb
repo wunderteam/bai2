@@ -1,4 +1,3 @@
-
 module Bai2
 
   class BaiFile
@@ -12,7 +11,7 @@ module Bai2
 
     # Asserts integrity of a fully-parsed BaiFile by calculating checksums.
     #
-    def assert_integrity!
+    def assert_integrity!(options = {})
       expectation = {
         sum:      @trailer[:file_control_total],
         children: @trailer[:number_of_groups],
@@ -21,8 +20,10 @@ module Bai2
 
       # Check children count
       unless expectation[:children] == (actual = self.groups.count)
-        raise IntegrityError.new("Number of groups invalid: " \
-          + "expected #{expectation[:children]}, actually: #{actual}")
+        if options[:verify_num_groups_in_file]
+          raise IntegrityError.new("Number of groups invalid: " \
+                                   + "expected #{expectation[:children]}, actually: #{actual}")
+        end
       end
 
       # Check sum vs. group sums
@@ -31,16 +32,20 @@ module Bai2
       end.reduce(0, &:+)
 
       unless expectation[:sum] == actual_sum
-        raise IntegrityError.new(
-          "Sums invalid: file: #{expectation[:sum]}, groups: #{actual_sum}")
+        if options[:verify_file_sums]
+          raise IntegrityError.new(
+                  "Sums invalid: file: #{expectation[:sum]}, groups: #{actual_sum}")
+        end
       end
 
       # Run children assertions, which return number of records. May raise.
-      records = self.groups.map {|g| g.send(:assert_integrity!, @options) }.reduce(0, &:+)
+      records = self.groups.map {|g| g.send(:assert_integrity!, options) }.reduce(0, &:+)
 
       unless expectation[:records] == (actual_num_records = records + 2)
-        raise IntegrityError.new(
-          "Record count invalid: file: #{expectation[:records]}, groups: #{actual_num_records}")
+        if options[:verify_num_records_in_file]
+          raise IntegrityError.new(
+                  "Record count invalid: file: #{expectation[:records]}, groups: #{actual_num_records}")
+        end
       end
 
       actual_num_records
@@ -64,8 +69,10 @@ module Bai2
 
         # Check children count
         unless expectation[:children] == (actual = self.accounts.count)
-          raise IntegrityError.new("Number of accounts invalid: " \
-            + "expected #{expectation[:children]}, actually: #{actual}")
+          if options[:verify_num_accounts_in_group]
+            raise IntegrityError.new("Number of accounts invalid: " \
+                                     + "expected #{expectation[:children]}, actually: #{actual}")
+          end
         end
 
         # Check sum vs. account sums
@@ -74,16 +81,20 @@ module Bai2
         end.reduce(0, &:+)
 
         unless expectation[:sum] == actual_sum
-          raise IntegrityError.new(
-            "Sums invalid: file: #{expectation[:sum]}, groups: #{actual_sum}")
+          if options[:verify_group_sums]
+            raise IntegrityError.new(
+                    "Sums invalid: file: #{expectation[:sum]}, groups: #{actual_sum}")
+          end
         end
 
         # Run children assertions, which return number of records. May raise.
         records = self.accounts.map {|a| a.send(:assert_integrity!, options) }.reduce(0, &:+)
 
         unless expectation[:records] == (actual_num_records = records + 2)
-          raise IntegrityError.new(
-            "Record count invalid: group: #{expectation[:records]}, accounts: #{actual_num_records}")
+          if options[:verify_num_records_in_group]
+            raise IntegrityError.new(
+                    "Record count invalid: group: #{expectation[:records]}, accounts: #{actual_num_records}")
+          end
         end
 
         # Return record count
@@ -113,9 +124,11 @@ module Bai2
                        transaction_amounts_sum + summary_amounts_sum
                      end
 
-        unless expectation[:sum] == actual_sum
-          raise IntegrityError.new(
-            "Sums invalid: expected: #{expectation[:sum]}, actual: #{actual_sum}")
+        if options[:verify_account_sums]
+          unless expectation[:sum] == actual_sum
+            raise IntegrityError.new(
+                    "Sums invalid: expected: #{expectation[:sum]}, actual: #{actual_sum}")
+          end
         end
 
         # Run children assertions, which return number of records. May raise.
@@ -129,9 +142,11 @@ module Bai2
         additional_records = 2 + options[:num_account_summary_continuation_records]
         actual_num_records = records + additional_records
 
-        unless expectation[:records] == actual_num_records
-          raise IntegrityError.new(
-              "Record count invalid: account: #{expectation[:records]}, transactions: #{actual_num_records}")
+        if options[:verify_num_records_in_account]
+          unless expectation[:records] == actual_num_records
+            raise IntegrityError.new(
+                    "Record count invalid: account: #{expectation[:records]}, transactions: #{actual_num_records}")
+          end
         end
 
         # Return record count
