@@ -180,7 +180,7 @@ module Bai2
       extend AttrReaderFromIvarHash
 
       attr_reader_from_ivar_hash :@record,
-        :amount, :text, :type, :bank_reference, :customer_reference
+        :amount, :text, :type, :bank_reference, :customer_reference, :funds_type
 
       def debit?
         type[:transaction] == :debit
